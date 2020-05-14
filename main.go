@@ -24,7 +24,6 @@ type NR_Metric []struct {
 
 func main() {
 
-
 	cmdLineArgs := os.Args[1:]
 
 	if len(cmdLineArgs) < 1 {
@@ -39,9 +38,7 @@ func main() {
 
 	apiKey := cmdLineArgs[0]
 
-
-
-	log.Println("Starting NR IOT Hub...")
+	log.Println("Starting NR IOT Hub on port ..." + port)
 
 	http.HandleFunc("/metric", func(w http.ResponseWriter, r *http.Request) {
 
@@ -55,7 +52,6 @@ func main() {
 		}
 
 		id := id_array[0]
-
 
 		name_array, exists := query["name"]
 		if !exists || (len(name_array[0]) < 1) {
@@ -79,8 +75,8 @@ func main() {
 
 		if !exists || (len(value_array[0]) < 1) {
 
-				_, _ = fmt.Fprintf(w, "No value_array")
-				return
+			_, _ = fmt.Fprintf(w, "No value_array")
+			return
 		}
 
 		value := value_array[0]
@@ -99,7 +95,7 @@ func main() {
 		log.Println(response.Status)
 
 		w.Write([]byte("NR status: " + string(response.Status)))
-		
+
 	})
 
 	listenAddress := ":" + port
@@ -107,7 +103,7 @@ func main() {
 
 }
 
-func sendNRMetric( nrmetric nr_types.NRMetric, apiKey string) (*http.Response, error) {
+func sendNRMetric(nrmetric nr_types.NRMetric, apiKey string) (*http.Response, error) {
 	client := http.Client{}
 	bts, _ := nrmetric.Marshal()
 	req, _ := http.NewRequest("POST", MetricUrl, bytes.NewBuffer(bts))
