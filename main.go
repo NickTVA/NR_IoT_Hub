@@ -4,6 +4,7 @@ import (
 	"NR_IoT_Hub/nr/nr_types"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 )
 
 const MetricUrl = "https://metric-api.newrelic.com/metric/v1"
+const LogsUrl = "https://log-api.newrelic.com/log/v1"
 
 type NR_Metric []struct {
 	Metrics []struct {
@@ -41,6 +43,7 @@ func main() {
 	log.Println("Starting NR IOT Hub on port ..." + port)
 
 	http.HandleFunc("/metric", handleMetric(apiKey))
+	http.HandleFunc("/log", handleLog(apiKey))
 
 	listenAddress := ":" + port
 	log.Fatal(http.ListenAndServe(listenAddress, nil))
@@ -107,6 +110,44 @@ func handleMetric(apiKey string) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleLog(apiKey string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		query := r.URL.Query()
+
+		id_array, exists := query["id"]
+		if !exists || (len(id_array[0]) < 1) {
+			_, _ = fmt.Fprintf(w, "No device id_array")
+			return
+		}
+
+		id := id_array[0]
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Error reading body: %v", err)
+			http.Error(w, "Error reading request body", http.StatusBadRequest)
+			return
+		}
+
+		body_string := string(body)
+
+		nrLog := makeLog(id, body_string)
+
+		response, err := sendNRLog(nrLog, apiKey)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		log.Println(response)
+
+		log.Println(response.Status)
+		w.Write([]byte("NR log status: " + string(response.Status)))
+
+	}
+}
+
 func sendNRMetric(nrmetric nr_types.NRMetric, apiKey string) (*http.Response, error) {
 	client := http.Client{}
 	bts, _ := nrmetric.Marshal()
@@ -135,4 +176,32 @@ func makeMetric(id string, name string, metricType string, value_float float64) 
 
 	nrmetric := nr_types.NRMetric{nrmetricsElements}
 	return nrmetric
+}
+
+func sendNRLog(nrlog nr_types.NRLog, apiKey string) (*http.Response, error) {
+	client := http.Client{}
+	bts, _ := nrlog.Marshal()
+	req, _ := http.NewRequest("POST", LogsUrl, bytes.NewBuffer(bts))
+	req.Header.Add("X-Insert-Key", apiKey)
+	req.Header.Add("Content-Type", "application/json")
+	log.Println("Sending NR Log...")
+	log.Println(string(bts))
+	response, err := client.Do(req)
+	return response, err
+}
+
+func makeLog(id string, message string) nr_types.NRLog {
+
+	curr_time_millis := time.Now().Unix()
+	logType := "IoT"
+
+	log := nr_types.NRLog{
+		Timestamp: curr_time_millis,
+		Message:   message,
+		Logtype:   logType,
+		DeviceID:  id,
+	}
+
+	return log
+
 }
