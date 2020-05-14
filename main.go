@@ -40,7 +40,15 @@ func main() {
 
 	log.Println("Starting NR IOT Hub on port ..." + port)
 
-	http.HandleFunc("/metric", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/metric", handleMetric(apiKey))
+
+	listenAddress := ":" + port
+	log.Fatal(http.ListenAndServe(listenAddress, nil))
+
+}
+
+func handleMetric(apiKey string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 
 		query := r.URL.Query()
 
@@ -96,11 +104,7 @@ func main() {
 
 		w.Write([]byte("NR status: " + string(response.Status)))
 
-	})
-
-	listenAddress := ":" + port
-	log.Fatal(http.ListenAndServe(listenAddress, nil))
-
+	}
 }
 
 func sendNRMetric(nrmetric nr_types.NRMetric, apiKey string) (*http.Response, error) {
