@@ -15,4 +15,6 @@ Log data in POST Body
 
 ##Running in Docker
 
+Forward port 4590 and set Insights key as environment variable
+
 docker build -t <image_tag> . && docker run -p 0.0.0.0:4590:4590 --env INSIGHTS_KEY=<insights_key> <image_tag> 
