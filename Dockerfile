@@ -12,7 +12,8 @@ RUN go build -o /go/bin/iothub
 
 EXPOSE 4590
 
-CMD ["/go/bin/iothub", "$INSIGHTS_KEY"]
+
+CMD ["./exec_hub.sh"]
 
 
 
