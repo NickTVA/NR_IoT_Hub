@@ -41,6 +41,7 @@ func main() {
 	apiKey := cmdLineArgs[0]
 
 	log.Println("Starting NR IOT Hub on port ..." + port)
+	log.Println("Insights key: " + apiKey)
 
 	http.HandleFunc("/metric", handleMetric(apiKey))
 	http.HandleFunc("/log", handleLog(apiKey))
