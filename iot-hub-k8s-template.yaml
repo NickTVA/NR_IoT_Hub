@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iothub-deployment
+spec:
+  selector:
+    matchLabels:
+      app: iothub-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: iothub-app
+    spec:
+      containers:
+        - name: iothub
+          image: nicktva/iothub:0.0.2
+          env:
+            - name: INSIGHTS_KEY
+              value: "NRII-XXXXXXXXXXX"
+            - name: ACCOUNT_ID
+              value: "XXXXXXXX"
+          ports:
+            - containerPort: 4590
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: iothub-app
+  name: iothub-app
+#  namespace: default
+spec:
+  type: LoadBalancer
+#  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 4590
+  selector:
+    app: iothub-app
