@@ -41,6 +41,7 @@ func main() {
 	http.HandleFunc("/metric", handleMetric(apiKey))
 	http.HandleFunc("/log", handleLog(apiKey))
 	http.HandleFunc("/ping", handlePing(apiKey, account_id))
+	http.HandleFunc("/geoenv", handGeoEnv(apiKey, account_id))
 
 	listenAddress := ":" + port
 	log.Fatal(http.ListenAndServe(listenAddress, nil))
@@ -73,6 +74,77 @@ func handlePing(apiKey string, account_id string) func(w http.ResponseWriter, r 
 		event := nr_types.PingEvent{
 			EventType: eventType,
 			DeviceId:  id,
+		}
+
+		sendEvent(event, apiKey, account_id)
+
+	}
+}
+
+func handGeoEnv(apiKey string, account_id string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+
+		id_array, exists := query["id"]
+		if !exists || (len(id_array[0]) < 1) {
+			_, _ = fmt.Fprintf(w, "No device id_array")
+			return
+
+		}
+
+		id := id_array[0]
+
+		temp_array, exists := query["temp"]
+
+		if !exists || (len(temp_array[0]) < 1) {
+
+			_, _ = fmt.Fprintf(w, "No temp")
+			return
+		}
+
+		temp := temp_array[0]
+		temp_float, _ := strconv.ParseFloat(temp, 32)
+
+		humid_array, exists := query["humid"]
+
+		if !exists || (len(humid_array[0]) < 1) {
+
+			_, _ = fmt.Fprintf(w, "No humi")
+			return
+		}
+
+		lat_array, exists := query["lat"]
+
+		if !exists || (len(lat_array[0]) < 1) {
+
+			_, _ = fmt.Fprintf(w, "No  type")
+			return
+		}
+
+		lat := lat_array[0]
+		lat_float, _ := strconv.ParseFloat(lat, 32)
+
+		lon_array, exists := query["lon"]
+
+		if !exists || (len(lon_array[0]) < 1) {
+
+			_, _ = fmt.Fprintf(w, "No  type")
+			return
+		}
+
+		lon := lon_array[0]
+		lon_float, _ := strconv.ParseFloat(lon, 32)
+
+		humid := humid_array[0]
+		humid_float, _ := strconv.ParseFloat(humid, 32)
+
+		event := nr_types.EnvironmentGeo{
+			EventType:   "EnvironmentGeo",
+			DeviceId:    id,
+			Temperature: temp_float,
+			Humidity:    humid_float,
+			Latitude:    lat_float,
+			Longitude:   lon_float,
 		}
 
 		sendEvent(event, apiKey, account_id)
@@ -173,6 +245,14 @@ func handleLog(apiKey string) func(w http.ResponseWriter, r *http.Request) {
 		log.Println(response)
 
 		log.Println(response.Status)
+		if response.StatusCode != http.StatusOK {
+			bodyBytes, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			bodyString := string(bodyBytes)
+			print(bodyString)
+		}
 		w.Write([]byte("NR log status: " + string(response.Status)))
 
 	}
