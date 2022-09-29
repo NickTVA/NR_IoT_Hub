@@ -1,4 +1,5 @@
 package nr_types
+
 import "encoding/json"
 
 type NRMetric []NRMetricElement
